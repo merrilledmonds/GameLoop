@@ -1,5 +1,5 @@
 ##GameLoop
-------
+
 
 ###Project Summary
 This is a C++ game loop based on [deWiTTERS' game loop](http://www.koonsolo.com/news/dewitters-gameloop/).
@@ -49,7 +49,7 @@ The loop skips over any system that's running faster than the framerate specifie
 Each system is called once its counter matches or falls behind this framerate designation, so the systems will always run at that rate or lower.
 
 Also note that the code requires you to substitute your own `Graphics Engine`, `Input Manager`, some form of `API` that can record a `string, double` pair representing values such as the `FPS`, `Input calls per second`, etc.
-The methods that call these systems is left empty so you can fill them in using your own favorite library.
+The methods that call these systems are left empty so you can fill them in using your own favorite library.
 I've tested the loop with `Ogre3D 1.7`, my own input manager that used `OIS` and a custom API class, and found the results to be sufficient.
 
 The `MainLoop` class also comes with a timer system, as defined in `Timers.h`, which allows any systems to request a millisecond timer.
