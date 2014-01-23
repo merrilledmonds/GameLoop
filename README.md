@@ -42,7 +42,6 @@ bool MainLoop::run(){
 		calculateAverageFPS();
 		
 		processTimers();
-		
 	}
 	return true;
 };

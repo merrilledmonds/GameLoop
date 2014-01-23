@@ -24,5 +24,7 @@ public:
 private:
 	TimerServer* mTimerServer;
 	std::map<double, std::string> mTimerIDMap;
+	double mTimerLength;
+	double mLastTimerWhen;
 };
 #endif

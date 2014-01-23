@@ -201,7 +201,14 @@ bool MainLoop::updateGFX(double sinceLastTime){
 // DELETE ME						//
 // Will mess up threading!			//
 #ifdef _DEBUG						//
-	Sleep(20); //gfx: 20 ms			//
+// You should never do this*, but	//
+// this example is so simple that...//
+// *See Stephan T. Lavavej's		//
+// "rand() Considered Harmful" Talk	//
+// at Going Native 2013.			//
+	int randomTime = std::rand()%50;//
+	Sleep(randomTime);				//
+	//gfx: 0-50 ms					//
 #endif								//
 //////////////////////////////////////
 
@@ -433,6 +440,9 @@ bool MainLoop::run(){
 		std::cout										//
 				 <<"Loop "<<loopCounter<<"\n"			//
 				 <<"   FPS (Avg.): "<<averageFPS<<"\n"	//
+		         <<"   Frame length: "					//
+				 <<""<<(int)(1000/(averageFPS+1e-20))	//
+				 <<"ms\n"								//
 		         <<"   Uptime: "<<uptime<<"ms"			//
 				 <<" ("<<uptime/1000<<"s):\n"			//
 		         <<"   SimTime: "<<simTime<<"ms"		//

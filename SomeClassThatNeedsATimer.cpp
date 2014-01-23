@@ -4,6 +4,8 @@
 SomeClassThatNeedsATimer::SomeClassThatNeedsATimer(){
 	mTimerServer;
 	mTimerIDMap;
+	mLastTimerWhen = 0;
+	mTimerLength = 3250;
 };
 SomeClassThatNeedsATimer::~SomeClassThatNeedsATimer(){
 };
@@ -18,7 +20,9 @@ void SomeClassThatNeedsATimer::someFunctionThatDoesSomethingWithATimer(){
 
 // Note that std::cout is *slow* and will lower fps		//
 #ifdef _DEBUG
-	std::cout<<"\n5 second timer is up.\n";
+	std::cout<<"\n5 second timer is up. "
+			 <<"(Timer was behind by "<<(GetTickCount()-(mLastTimerWhen+mTimerLength))<<"ms.)"
+			 <<"\n";
 #endif
 };
 
@@ -31,8 +35,9 @@ void SomeClassThatNeedsATimer::someFunctionThatDoesSomethingWithATimer(){
 //so that turrets can fire again. (Instead of checking for bool canFire every time, or incrementing a timer.)
 void SomeClassThatNeedsATimer::someFunctionThatNeedsATimer(){
 	if(mTimerServer){
-		double ID = mTimerServer->requestTimer(3250,this); //In 3.25 seconds or longer, the server will call timerDone.
+		double ID = mTimerServer->requestTimer(mTimerLength,this); //In 3.25 seconds or longer, the server will call timerDone.
 		mTimerIDMap[ID]="Test";
+		mLastTimerWhen = GetTickCount();
 // Note that std::cout is *slow* and will lower fps		//
 #ifdef _DEBUG
 	std::cout<<"Requested new timer.\n\n";
