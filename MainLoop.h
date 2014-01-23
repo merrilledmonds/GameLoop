@@ -6,6 +6,9 @@
 #include "SomeAPI.h"
 #include "SomeInputManager.h"
 #include "SomeGraphicsEngine.h"
+#include "SomeSystemThatServesSomeTimers.h"
+#include "SomeClassThatNeedsATimer.h"
+
 	
 class MainLoop: public TimerManager{
 public:
@@ -91,13 +94,17 @@ private:
 	
 	//loop vars
 	bool tickExceptionAI;
+	bool permanentTickExceptionAI;
 	double initTime;
 	double startTime;
 	double endTime;
 	double lastTime;
-	double loopTicks;
+	double loopCounter;
 	double uptime;
 	double averageFPS;
+
+	//shutdown
+	bool requestedShutdown;
 	
 	//mTimerMap[TimerServer][msWhen] = vector<TimerIDs>
 	std::map<TimerServer*, std::map<double, std::vector<double>>> mTimerMap;

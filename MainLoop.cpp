@@ -4,6 +4,8 @@
 
 MainLoop::MainLoop(){
 
+	requestedShutdown = false;
+
 	renderer = new SomeGraphicsEngine();
 	api = SomeAPI::getSingletonPtr();
 
@@ -69,7 +71,7 @@ MainLoop::MainLoop(){
 	startTime = 0;
 	endTime = 0;
 	lastTime = 0;
-	loopTicks = 0;
+	loopCounter = 0;
 	uptime = 0;
 	averageFPS = 0;
 
@@ -79,9 +81,10 @@ MainLoop::MainLoop(){
 	// Change to add exceptions to the AI, modify
 	// simulation speed, etc.
 	// 
-
+	
 	tickExceptionAI = false;
-	SimSpeedMultiplier = 1;
+	permanentTickExceptionAI = false;
+	SimSpeedMultiplier = 1.5;
 	simTime = 0;
 
 	//
@@ -109,7 +112,8 @@ bool MainLoop::getInputManager(){
 }
 
 bool MainLoop::requestShutdown(){
-	return false;
+	requestedShutdown = true;
+	return true;
 };
 
 bool MainLoop::captureAll(){
@@ -197,7 +201,7 @@ bool MainLoop::updateGFX(double sinceLastTime){
 // DELETE ME						//
 // Will mess up threading!			//
 #ifdef _DEBUG						//
-	Sleep(20); //input: 20 ms		//
+	Sleep(20); //gfx: 20 ms			//
 #endif								//
 //////////////////////////////////////
 
@@ -208,7 +212,7 @@ bool MainLoop::updateGFX(double sinceLastTime){
 //Allows the API to provide metrics such as FPS, CPS, Uptime etc.
 //You can then access these values from any subroutine that can read from the API
 void MainLoop::pumpUptime(){
-	if(api){ api->set("Uptime",startTime-initTime); }
+	if(api){ api->set("Uptime",uptime); }
 };
 void MainLoop::pumpFPS(){
 	if(api){ api->set("FPS",averageFPS); }
@@ -231,11 +235,41 @@ void MainLoop::pumpGameworldCPS(){
 bool MainLoop::run(){
 	bool running = true;
 	bool emptypass = true;
-	/* number of ticks since last average FPS calculation */
+	// number of loops since last average FPS calculation
+	double deltaLoops = 0;
+	// number of ticks(ms) since last loop
 	double deltaTicks = 0;
 
 	//Change for non-Windows
-	DWORD nextTick = GetTickCount();
+	double lastTime = GetTickCount();
+
+	
+//////////////////////////////////////////////////////////
+//														//
+// DELETE ME											//
+//														//
+// For demonstration only								//
+// Note that std::cout is *slow* and will lower fps		//
+#ifdef _DEBUG											//
+		//A server acts as a middle-man between any listeners and the manager (the main loop)
+		SomeSystemThatServesSomeTimers testTimerServer = SomeSystemThatServesSomeTimers();
+		testTimerServer.setTimerManager(this);
+		//Generally, the listener is where the timer actually starts doing something, such as
+		//calculating stuff, triggering changes, etc.
+		//TimerServer::relayTimerDone still leaves room in how it's implemented to notify
+		//several Listeners that some Timer with some id has completed, so its behavior is
+		//very implementation-heavy. In this implementation, the server relays the timerDone
+		//call only to the TimerListener that requested it.
+		SomeClassThatNeedsATimer testTimerListener = SomeClassThatNeedsATimer();
+		testTimerListener.someFunctionThatAddsServers(&testTimerServer);
+		//Imagine this function being called from within the loop by a part of one of the systems,
+		//e.g. The AI needs a notification in 10 seconds that some building is about to collapse
+		//	   This call will make sure the AI receives that notification the first loop after the
+		//	   10-second mark (but not earlier).
+		testTimerListener.someFunctionThatNeedsATimer();
+#endif													//
+//														//
+//////////////////////////////////////////////////////////
 
 
 	/*
@@ -248,9 +282,14 @@ bool MainLoop::run(){
 	An exception is possible for the AI if the previous render frame has specifically
 	requested a recalculation. This can be called by setting tickExceptionAI = true.
 	*/
-	while(running || !requestShutdown()){
+	while(running && !requestedShutdown){
+
+		//Change for non-Windows
 		startTime = GetTickCount();
+		lastTime = GetTickCount();
+		endTime = GetTickCount();
 		//let API know how long we've been up
+		uptime = startTime-initTime;
 		pumpUptime();
 
 		if((startTime-lastInput)>maxticksInput){
@@ -301,7 +340,7 @@ bool MainLoop::run(){
 		}
 		
 		//logic
-		if((startTime-lastAI)>maxticksAI || tickExceptionAI){
+		if((startTime-lastAI)>maxticksAI || tickExceptionAI || permanentTickExceptionAI){
 			updateAI();
 			lastAI=startTime;
 			countAI++;
@@ -351,10 +390,10 @@ bool MainLoop::run(){
 		//Similar to CPS calculations in sections above
 		if((startTime-lastFPS)>maxticksFPS){
 			//calculate average fps
-			averageFPS = 1000*deltaTicks/(startTime-lastFPS);
+			averageFPS = 1000*deltaLoops/(startTime-lastFPS);
 			pumpFPS();
 			lastFPS = startTime;
-			deltaTicks = 0;	
+			deltaLoops = 0;	
 		}
 
 		//As the Timer Manager, we need to process Timer Requests
@@ -365,9 +404,10 @@ bool MainLoop::run(){
 
 		//Calculate loop variables for next pass
 		lastTime = startTime;
-		loopTicks++;
-		deltaTicks++;
-		simTime += SimSpeedMultiplier;
+		loopCounter++;
+		deltaLoops++;
+		deltaTicks = GetTickCount()-endTime;
+		simTime += deltaTicks*SimSpeedMultiplier;
 		endTime = GetTickCount();
 		
 		//The loop should *never* do an empty pass. If it does, you should want
@@ -384,16 +424,27 @@ bool MainLoop::run(){
 // DELETE ME											//
 //														//
 // For demonstration only								//
-// Will lower FPS considerably - prints every frame		//
+// Note that std::cout is *slow* and will lower fps		//
+// May print every time									//
 #ifdef _DEBUG											//
-		std::cout<<loopTicks<<" ("<<averageFPS<<")\n";	//
-		std::cout<<"   Counts:   ";						//
-		std::cout<<"AI "<<countAI<<" | ";				//
-		std::cout<<"Gameworld "<<countGameworld<<" | ";	//
-		std::cout<<"Input "<<countInput<<" | ";			//
-		std::cout<<"Network "<<countNetwork<<" | ";		//
-		std::cout<<"GFX "<<countGFX;					//
-		std::cout<<std::endl;							//
+		bool printEveryFrame = false;					//
+	if(deltaLoops==1 || printEveryFrame){				//
+		std::cout.precision(10);						//
+		std::cout										//
+				 <<"Loop "<<loopCounter<<"\n"			//
+				 <<"   FPS (Avg.): "<<averageFPS<<"\n"	//
+		         <<"   Uptime: "<<uptime<<"ms"			//
+				 <<" ("<<uptime/1000<<"s):\n"			//
+		         <<"   SimTime: "<<simTime<<"ms"		//
+				 <<" ("<<simTime/1000<<"s):\n"			//
+		         <<"   Counts:   "						//
+		         <<"AI "<<countAI<<" | "				//
+		         <<"Gameworld "<<countGameworld<<" | "	//
+		         <<"Input "<<countInput<<" | "			//
+		         <<"Network "<<countNetwork<<" | "		//
+		         <<"GFX "<<countGFX						//
+		         <<std::endl;							//
+		}												//
 #endif													//
 //														//
 //////////////////////////////////////////////////////////
@@ -412,7 +463,7 @@ bool MainLoop::run(){
 void MainLoop::receiveTimerRequest(double msWhen, double id, TimerServer* s){
 	mTimerMap[s][msWhen].push_back(id);
 	//next timer is the first timer in the map
-	mNextTimer[s] = mTimerMap.begin()->second.begin()->first;
+	mNextTimer[s] = mTimerMap[s].begin()->first;
 };
 void MainLoop::processTimerRequests(){
 	std::vector<std::tuple<TimerServer*, double, double>> toDelete;

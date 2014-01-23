@@ -3,7 +3,7 @@
 
 ###Project Summary
 This is a C++ game loop based on [deWiTTERS' game loop](http://www.koonsolo.com/news/dewitters-gameloop/).
-It provides a quick-to-implement template for general game development applications.
+It provides an easy-to-implement template for general game development applications.
 
 
 ###License
@@ -22,7 +22,7 @@ main.run();
 Once running, the basic outline of the loop looks like this:
 ```cpp
 bool MainLoop::run(){
-	while(running || !requestShutdown()){
+	while(running && !requestShutdown()){
 		if(timeToCheckInput){
 			captureAll();
 		}
@@ -40,6 +40,9 @@ bool MainLoop::run(){
 		}
 		
 		calculateAverageFPS();
+		
+		processTimers();
+		
 	}
 	return true;
 };

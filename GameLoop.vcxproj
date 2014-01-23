@@ -77,8 +77,10 @@
   <ItemGroup>
     <ClInclude Include="MainLoop.h" />
     <ClInclude Include="SomeAPI.h" />
+    <ClInclude Include="SomeClassThatNeedsATimer.h" />
     <ClInclude Include="SomeGraphicsEngine.h" />
     <ClInclude Include="SomeInputManager.h" />
+    <ClInclude Include="SomeSystemThatServesSomeTimers.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Timers.h" />
@@ -87,8 +89,10 @@
     <ClCompile Include="GameLoop.cpp" />
     <ClCompile Include="MainLoop.cpp" />
     <ClCompile Include="SomeAPI.cpp" />
+    <ClCompile Include="SomeClassThatNeedsATimer.cpp" />
     <ClCompile Include="SomeGraphicsEngine.cpp" />
     <ClCompile Include="SomeInputManager.cpp" />
+    <ClCompile Include="SomeSystemThatServesSomeTimers.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
